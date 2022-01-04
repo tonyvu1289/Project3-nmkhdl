@@ -1,12 +1,86 @@
-import streamlit as st
+# import streamlit as st
 import pandas as pd
 import numpy as np
 from PIL import Image
 import time
 import sklearn
 import pickle
+import copy
+import re
+import sys
+import vncorenlp
+from vncorenlp import VnCoreNLP
+import nltk
+from nltk import tokenize
+import streamlit as st
 
 
+
+
+
+#read lib
+#stopword
+f = open('stopwords.txt', 'r', encoding='UTF-8')
+stopwords = f.read().split('\n')
+#java library
+annotator = VnCoreNLP("VnCoreNLP-1.1.1.jar", annotators="wseg,pos,ner,parse", max_heap_size='-Xmx2g')
+# annotator = VnCoreNLP(address="http://127.0.0.1", port=9000) 
+
+def NoiseDefuse(s):
+    result = copy.copy(s)
+    result = result.str.lower()
+    result = result.apply(lambda x: re.sub(r'http\S+', '', x))
+    result = result.apply(lambda x: x.replace('\n',' '))
+    result = result.apply(lambda x: re.sub('[^aàảãáạăằẳẵắặâầẩẫấậ b c dđeèẻẽéẹêềểễếệ f g hiìỉĩíịjklmnoòỏõóọôồổỗốộơờởỡớợpqrstu ùủũúụưừửữứựvwxyỳỷỹýỵz +[0-9]+', '', x))
+    return result
+
+def reduce_dim(x):
+    return x[0]
+
+def TokenNize(s):
+    return s.apply(annotator.tokenize).apply(reduce_dim)
+    
+
+def normalized1(x):
+    contractions={
+        'cđv': 'cổ động viên',
+        'thcs': 'trung học cơ sở',
+        'pgs': 'phó giáo sư ',
+        'gs': 'giáo sư ',
+        'ts': 'tiến sĩ ',
+        'gd  đt': 'giáo dục - đào tạo',
+        'gd đt': 'giáo dục - đào tạo',
+        'gdđt': 'giáo dục - đào tạo',
+        'hlv': 'huấn luyện viên',
+        'tp': ' thành phố ',
+        'hcm': ' Hồ Chí Minh ',
+        'đt': 'đội tuyển',
+        'gd': 'giáo dục'
+    }
+    for k,v in contractions.items():
+        x=x.replace(k,v)
+    return x
+
+def normalized(s):
+    return s.apply(normalized1)
+
+def remove_stopword(list_word):
+    clean_list = []
+    for i in range(len(list_word)):
+        temp=""
+        temp1=""
+        if i > 0 and i < (len(list_word)-1):
+            temp = str(list_word[i]) + " " + str(list_word[i+1])
+            temp1 = str(list_word[i-1]) + " " + str(list_word[i])
+        if list_word[i] not in stopwords and temp not in stopwords and temp1 not in stopwords:
+            clean_list.append(list_word[i])
+    return clean_list
+
+def Preprocess(s):
+    return TokenNize(NoiseDefuse(normalized(s))).apply(remove_stopword)
+
+def fullPreprocess(s):
+    return Preprocess(s).apply(lambda x:" ".join(x))
 
 def set_config():
     st.set_page_config(
@@ -28,22 +102,24 @@ def fake_news_dectection_page():
         option = st.selectbox('Choose model',('Logistic Regression','Random Forest Classifier'
                                                     ,'SVC'))
         text = st.text_input('Input news')
-        
+        text_preprocessed = fullPreprocess(pd.Series([text]))
+        # text_preprocessed = [text]
         if option == 'Logistic Regression':
             with open('LogisticRegression.pkl','rb') as f:
                 if text != '':
                     loaded_model = pickle.load(f)
-                    result = loaded_model.predict([text])
+                    result = loaded_model.predict(text_preprocessed)
         elif option == 'Random Forest Classifier':
             with open('RandomForestClassifier.pkl','rb') as f:
                 if text != '':
                     loaded_model = pickle.load(f)
-                    result = loaded_model.predict([text])
+                    result = loaded_model.predict(text_preprocessed)
+                    st.write(result)
         elif option == 'SVC':
             with open('SVC.pkl','rb') as f:
                 if text != '':
                     loaded_model = pickle.load(f)
-                    result = loaded_model.predict([text])
+                    result = loaded_model.predict(text_preprocessed)
                     
         if st.button('Predict'):
             if result != -1:
@@ -86,8 +162,8 @@ def main():
         home_page()
     
 
-if __name__ == '__main__':
-    set_config()
-    main()
+
+set_config()
+main()  
 
     
