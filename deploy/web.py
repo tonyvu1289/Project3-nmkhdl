@@ -16,16 +16,18 @@ import streamlit as st
 
 
 
+def set_page_config():
+    #set page config
+    st.set_page_config(
+    page_title="Fake news detection",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    menu_items={
+            'About': "# TEAM Năm chàng lính ngự lâm"
+    }
+    )
 
-
-#read lib
-#stopword
-f = open('stopwords.txt', 'r', encoding='UTF-8')
-stopwords = f.read().split('\n')
-#java library
-annotator = VnCoreNLP("VnCoreNLP-1.1.1.jar", annotators="wseg,pos,ner,parse", max_heap_size='-Xmx2g')
-# annotator = VnCoreNLP(address="http://127.0.0.1", port=9000) 
-
+@st.cache
 def NoiseDefuse(s):
     result = copy.copy(s)
     result = result.str.lower()
@@ -34,13 +36,15 @@ def NoiseDefuse(s):
     result = result.apply(lambda x: re.sub('[^aàảãáạăằẳẵắặâầẩẫấậ b c dđeèẻẽéẹêềểễếệ f g hiìỉĩíịjklmnoòỏõóọôồổỗốộơờởỡớợpqrstu ùủũúụưừửữứựvwxyỳỷỹýỵz +[0-9]+', '', x))
     return result
 
+@st.cache
 def reduce_dim(x):
     return x[0]
 
+@st.cache
 def TokenNize(s):
     return s.apply(annotator.tokenize).apply(reduce_dim)
-    
 
+@st.cache 
 def normalized1(x):
     contractions={
         'cđv': 'cổ động viên',
@@ -61,9 +65,11 @@ def normalized1(x):
         x=x.replace(k,v)
     return x
 
+@st.cache
 def normalized(s):
     return s.apply(normalized1)
 
+@st.cache
 def remove_stopword(list_word):
     clean_list = []
     for i in range(len(list_word)):
@@ -76,52 +82,50 @@ def remove_stopword(list_word):
             clean_list.append(list_word[i])
     return clean_list
 
+@st.cache
 def Preprocess(s):
     return TokenNize(NoiseDefuse(normalized(s))).apply(remove_stopword)
 
+@st.cache
 def fullPreprocess(s):
     return Preprocess(s).apply(lambda x:" ".join(x))
 
-def set_config():
-    st.set_page_config(
-    page_title="Fake news detection",
-    layout="wide",
-    initial_sidebar_state="expanded",
-    menu_items={
-         'About': "# TEAM Năm chàng lính ngự lâm"
-    }
-    )
+
+def choose_select():
+    choose_model = st.selectbox('Choose model',('Logistic Regression','Random Forest Classifier' ,'SVC'))
+                                                   
+    text = st.text_input('Input news')
+    choose_predict = st.button('Predict')
+    return choose_model, text, choose_predict
+
 
 def fake_news_dectection_page():
-    
-            
     left,mid,right = st.columns([55,1,44])
     with left:
         result = -1
         #button
-        option = st.selectbox('Choose model',('Logistic Regression','Random Forest Classifier'
-                                                    ,'SVC'))
-        text = st.text_input('Input news')
-        text_preprocessed = fullPreprocess(pd.Series([text]))
-        # text_preprocessed = [text]
-        if option == 'Logistic Regression':
-            with open('LogisticRegression.pkl','rb') as f:
-                if text != '':
-                    loaded_model = pickle.load(f)
-                    result = loaded_model.predict(text_preprocessed)
-        elif option == 'Random Forest Classifier':
-            with open('RandomForestClassifier.pkl','rb') as f:
-                if text != '':
-                    loaded_model = pickle.load(f)
-                    result = loaded_model.predict(text_preprocessed)
-                    st.write(result)
-        elif option == 'SVC':
-            with open('SVC.pkl','rb') as f:
-                if text != '':
-                    loaded_model = pickle.load(f)
-                    result = loaded_model.predict(text_preprocessed)
-                    
-        if st.button('Predict'):
+        choose_model, text, choose_predict = choose_select()           
+        if choose_predict:
+            if choose_model == 'Logistic Regression':
+                with open('LogisticRegression.pkl','rb') as f:
+                    if text != '':
+                        text_preprocessed = fullPreprocess(pd.Series([text]))
+                        loaded_model = pickle.load(f)
+                        result = loaded_model.predict(text_preprocessed)
+            elif choose_model == 'Random Forest Classifier':
+                with open('RandomForestClassifier.pkl','rb') as f:
+                    if text != '':
+                        text_preprocessed = fullPreprocess(pd.Series([text]))
+                        loaded_model = pickle.load(f)
+                        result = loaded_model.predict(text_preprocessed)
+                        st.write(result)
+            elif choose_model == 'SVC':
+                with open('SVC.pkl','rb') as f:
+                    if text != '':
+                        text_preprocessed = fullPreprocess(pd.Series([text]))
+                        loaded_model = pickle.load(f)
+                        result = loaded_model.predict(text_preprocessed)
+                        
             if result != -1:
                 my_bar = st.progress(0)
                 for p in range(100):
@@ -147,7 +151,6 @@ def home_page():
     member_df = pd.DataFrame(data_member)
     st.table(member_df)
 
-
 def main():
     left,mid,right = st.columns([1,1,10])
         
@@ -160,10 +163,25 @@ def main():
     fake_news_dectection_page()
     if st.button('About Us'):
         home_page()
-    
 
 
-set_config()
-main()  
+def read_stopwords():
+    #read lib
+    #stopword
+    f = open('stopwords.txt', 'r', encoding='UTF-8')
+    stopwords = f.read().split('\n')
+    return stopwords
+
+@st.cache
+def read_annotator():
+     #java library
+    annotator = VnCoreNLP("VnCoreNLP-1.1.1.jar", annotators="wseg,pos,ner,parse", max_heap_size='-Xmx2g')
+    # annotator = VnCoreNLP(address="http://127.0.0.1", port=9000)
+    return annotator
+
+set_page_config()
+stopwords = read_stopwords()
+annotator = read_annotator()
+main() 
 
     
