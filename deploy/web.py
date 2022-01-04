@@ -13,6 +13,7 @@ from vncorenlp import VnCoreNLP
 import nltk
 from nltk import tokenize
 import streamlit as st
+import os
 
 
 
@@ -42,7 +43,7 @@ def reduce_dim(x):
 
 @st.cache
 def TokenNize(s):
-    return s.apply(annotator.tokenize).apply(reduce_dim)
+    return s.apply(st.session_state.annotator.tokenize).apply(reduce_dim)
 
 @st.cache 
 def normalized1(x):
@@ -118,7 +119,6 @@ def fake_news_dectection_page():
                         text_preprocessed = fullPreprocess(pd.Series([text]))
                         loaded_model = pickle.load(f)
                         result = loaded_model.predict(text_preprocessed)
-                        st.write(result)
             elif choose_model == 'SVC':
                 with open('SVC.pkl','rb') as f:
                     if text != '':
@@ -144,16 +144,15 @@ def fake_news_dectection_page():
 
     
 def home_page():
-    
     data_member = {'ID':['19120212','19120297','19120328','19120389','19120602'],
                         'Name':['Vũ Công Duy','Đoàn Việt Nam','Võ Trọng Phú','Tô Gia Thuận','Hồ Hữu Ngọc']}
     st.subheader('ABOUT US')
     member_df = pd.DataFrame(data_member)
     st.table(member_df)
 
+
 def main():
     left,mid,right = st.columns([1,1,10])
-        
     with left:
         with Image.open('logo.jpg') as image_logo:
             st.image(image_logo, use_column_width='auto')
@@ -165,23 +164,21 @@ def main():
         home_page()
 
 
-def read_stopwords():
+
+@st.cache(allow_output_mutation=True)
+def init():
     #read lib
     #stopword
     f = open('stopwords.txt', 'r', encoding='UTF-8')
     stopwords = f.read().split('\n')
-    return stopwords
-
-@st.cache
-def read_annotator():
-     #java library
-    annotator = VnCoreNLP("VnCoreNLP-1.1.1.jar", annotators="wseg,pos,ner,parse", max_heap_size='-Xmx2g')
+    #java library
+    annotator = VnCoreNLP('VnCoreNLP-1.1.1.jar', annotators="wseg,pos,ner,parse", max_heap_size='-Xmx2g')
     # annotator = VnCoreNLP(address="http://127.0.0.1", port=9000)
-    return annotator
+    return stopwords, annotator
 
 set_page_config()
-stopwords = read_stopwords()
-annotator = read_annotator()
+stopwords, st.session_state['annotator'] = init()
 main() 
+
 
     
