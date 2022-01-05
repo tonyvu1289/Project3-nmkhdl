@@ -172,7 +172,6 @@ def read_stopwords():
     stopwords = f.read().split('\n')
     return stopwords
 
-@st.cache
 def read_annotator():
      #java library
     annotator = VnCoreNLP("VnCoreNLP-1.1.1.jar", annotators="wseg,pos,ner,parse", max_heap_size='-Xmx2g')
