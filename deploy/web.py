@@ -74,18 +74,16 @@ def normalized(s):
 def remove_stopword(list_word):
     clean_list = []
     for i in range(len(list_word)):
-        temp=""
-        temp1=""
-        if i > 0 and i < (len(list_word)-1):
-            temp = str(list_word[i]) + " " + str(list_word[i+1])
-            temp1 = str(list_word[i-1]) + " " + str(list_word[i])
-        if list_word[i] not in stopwords and temp not in stopwords and temp1 not in stopwords:
+        temp=list_word[i].replace('_',' ')
+        if temp not in stopwords :
             clean_list.append(list_word[i])
     return clean_list
 
 @st.cache
 def Preprocess(s):
-    return TokenNize(NoiseDefuse(normalized(s))).apply(remove_stopword)
+    a= TokenNize(normalized(NoiseDefuse(s)))
+    a=a.apply(remove_stopword)
+    return a
 
 @st.cache
 def fullPreprocess(s):
@@ -164,23 +162,14 @@ def main():
         home_page()
 
 
-
 @st.cache(allow_output_mutation=True)
 def init():
     #read lib
     #stopword
     f = open('stopwords.txt', 'r', encoding='UTF-8')
     stopwords = f.read().split('\n')
-<<<<<<< HEAD
-    return stopwords
-
-def read_annotator():
-     #java library
-    annotator = VnCoreNLP("VnCoreNLP-1.1.1.jar", annotators="wseg,pos,ner,parse", max_heap_size='-Xmx2g')
-=======
     #java library
     annotator = VnCoreNLP('VnCoreNLP-1.1.1.jar', annotators="wseg,pos,ner,parse", max_heap_size='-Xmx2g')
->>>>>>> f4aa487ae12cd715bce1a277905bdd487cec5d61
     # annotator = VnCoreNLP(address="http://127.0.0.1", port=9000)
     return stopwords, annotator
 
