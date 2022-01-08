@@ -48,19 +48,19 @@ def TokenNize(s):
 @st.cache 
 def normalized1(x):
     contractions={
-        'cđv': 'cổ động viên',
-        'thcs': 'trung học cơ sở',
-        'pgs': 'phó giáo sư ',
-        'gs': 'giáo sư ',
-        'ts': 'tiến sĩ ',
-        'gd  đt': 'giáo dục - đào tạo',
-        'gd đt': 'giáo dục - đào tạo',
-        'gdđt': 'giáo dục - đào tạo',
-        'hlv': 'huấn luyện viên',
-        'tp': ' thành phố ',
-        'hcm': ' Hồ Chí Minh ',
-        'đt': 'đội tuyển',
-        'gd': 'giáo dục'
+        ' cđv': ' cổ động viên',
+        ' thcs': ' trung học cơ sở',
+        ' pgs': ' phó giáo sư ',
+        ' gs': ' giáo sư ',
+        ' ts': ' tiến sĩ ',
+        ' gd  đt': ' giáo dục - đào tạo',
+        ' gd đt': ' giáo dục - đào tạo',
+        ' gdđt': ' giáo dục - đào tạo',
+        ' hlv': ' huấn luyện viên',
+        ' tp': ' thành phố ',
+        ' hcm': ' Hồ Chí Minh ',
+        ' đt': ' đội tuyển ',
+        ' gd': ' giáo dục '
     }
     for k,v in contractions.items():
         x=x.replace(k,v)
